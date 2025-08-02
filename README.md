@@ -34,7 +34,7 @@ $ docker run --name postgres-nest -p 5432:5432 -e POSTGRES_USER=postgres -e POST
 ```
 
 ```bash
-$ npm install
+$ npm install --legacy-peer-deps
 ```
 
 ## Compile and run the project
