@@ -20,6 +20,7 @@ async function bootstrap(): Promise<void> {
   app.useLogger(logger);
   app.useGlobalInterceptors(new TransformInterceptor());
   app.enableShutdownHooks(['SIGINT', 'SIGTERM']); // Enable graceful shutdown, will disconnect clients
+  app.enableCors();
 
   await app.listen(3000);
 
