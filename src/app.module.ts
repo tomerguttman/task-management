@@ -3,6 +3,7 @@ import { TasksModule } from './tasks/tasks.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from './auth/auth.module';
 import { LoggerModule } from 'nestjs-pino';
+import { KafkaModule } from './kafka/kafka.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { LoggerModule } from 'nestjs-pino';
       synchronize: true,
     }),
     AuthModule,
+    KafkaModule,
   ],
 })
 export class AppModule {}

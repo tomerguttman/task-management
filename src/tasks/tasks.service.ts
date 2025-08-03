@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, OnModuleInit } from "@nestjs/common";
 import { TaskStatus } from './task-status.enum';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { GetTasksFilterDto } from './dto/get-tasks-filter.dto';
@@ -6,13 +6,29 @@ import { TasksRepository } from './tasks.repository';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Task } from './task.entity';
 import { User } from '../auth/user.entity';
+import { ProducerService } from "../kafka/producer.service";
+import { ConsumerService } from "../kafka/consumer.service";
+import { EachMessagePayload } from "kafkajs";
 
 @Injectable()
-export class TasksService {
+export class TasksService implements OnModuleInit {
   constructor(
     @InjectRepository(TasksRepository)
     private tasksRepository: TasksRepository,
+    private producerService: ProducerService,
+    private consumerService: ConsumerService
   ) {}
+
+  async onModuleInit(): Promise<void> {
+    await this.consumerService.consume('tasks.json', {
+      autoCommit: true,
+      eachMessage: async ({ message }: EachMessagePayload): Promise<void> => {
+        const task: Task = JSON.parse(message.value.toString());
+
+        console.log(`Received task from Kafka: ${task.id} - ${task.title}`);
+      },
+    })
+  }
 
   getTasks(filterDto: GetTasksFilterDto, user: User): Promise<Task[]> {
     return this.tasksRepository.getTasks(filterDto, user);
@@ -30,8 +46,23 @@ export class TasksService {
     return found;
   }
 
-  createTask(createTaskDto: CreateTaskDto, user: User): Promise<Task> {
-    return this.tasksRepository.createTask(createTaskDto, user);
+  async createTask(createTaskDto: CreateTaskDto, _user: User): Promise<Task> {
+    const task: Task = await this.tasksRepository.createTask(createTaskDto, _user);
+    // @ts-ignore
+    const { user, ..._task } = task;
+
+    await this.sendTaskToKafka(_task as Task);
+
+    return task;
+  }
+
+  async sendTaskToKafka(task: Task): Promise<void> {
+    try {
+      await this.producerService.produceMessage('tasks.json', {
+        key: task.id,
+        value: JSON.stringify(task),
+      });
+    } catch (e) {}
   }
 
   async deleteTask(id: string, user: User): Promise<void> {
