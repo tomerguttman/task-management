@@ -11,4 +11,6 @@ export const configSchema = Joi.object({
   KAFKA_CLIENT_ID: Joi.string().required(),
   KAFKA_GROUP_ID: Joi.string().required(),
   KAFKA_TASKS_TOPIC: Joi.string().required(),
+  JWT_SECRET: Joi.string().required(),
+  JWT_EXPIRATION_TIME: Joi.string().required(),
 });

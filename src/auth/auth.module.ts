@@ -6,17 +6,26 @@ import { UsersRepository } from './users.repository';
 import { PassportModule } from '@nestjs/passport';
 import { JwtModule } from '@nestjs/jwt';
 import { JwtStrategy } from './jwt.strategy';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ENV } from '../helpers/constants';
 
 @Module({
   imports: [
+    ConfigModule,
     PassportModule.register({
       defaultStrategy: 'jwt',
     }),
-    JwtModule.register({
-      secret: 'top_secret_51', // Replace it with your actual secret
-      signOptions: {
-        expiresIn: 3600, // Token expiration time in seconds
-      },
+    // registerAsync allows you to use async configuration for the JwtModule
+    // This is useful for loading configuration from environment variables or other sources
+    JwtModule.registerAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: async (configService: ConfigService): Promise<any> => ({
+        secret: configService.get(ENV.JWT_SECRET), // Use environment variable for secret
+        signOptions: {
+          expiresIn: configService.get(ENV.JWT_EXPIRATION_TIME), // Token expiration time, can be adjusted as needed
+        },
+      }),
     }),
     TypeOrmModule.forFeature([UsersRepository]),
   ],
