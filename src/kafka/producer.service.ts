@@ -5,15 +5,19 @@ import {
 } from '@nestjs/common';
 import { Kafka, Producer } from 'kafkajs';
 import { Logger } from '@nestjs/common';
+import { ENV } from '../helpers/constants';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class ProducerService implements OnModuleInit, OnApplicationShutdown {
   private logger: Logger = new Logger(ProducerService.name);
   private readonly kafka: Kafka = new Kafka({
-    clientId: 'task-management-app',
-    brokers: ['localhost:9092'],
+    clientId: this.configService.get(ENV.KAFKA_CLIENT_ID),
+    brokers: [this.configService.get(ENV.KAFKA_ADDRESS)],
   });
   private readonly producer: Producer = this.kafka.producer();
+
+  constructor(private configService: ConfigService) {}
 
   async onModuleInit(): Promise<void> {
     await this.producer.connect();

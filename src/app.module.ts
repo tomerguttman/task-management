@@ -3,10 +3,15 @@ import { TasksModule } from './tasks/tasks.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from './auth/auth.module';
 import { LoggerModule } from 'nestjs-pino';
-import { KafkaModule } from './kafka/kafka.module';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ENV } from './helpers/constants';
 
 @Module({
   imports: [
+    ConfigModule.forRoot({
+      envFilePath: [`.env.stage.${process.env.STAGE}`], // Load environment variables from .env file
+      isGlobal: true,
+    }),
     TasksModule,
     LoggerModule.forRoot({
       pinoHttp: {
@@ -16,18 +21,21 @@ import { KafkaModule } from './kafka/kafka.module';
         },
       },
     }),
-    TypeOrmModule.forRoot({
-      type: 'postgres',
-      host: 'localhost',
-      port: 5432,
-      username: 'postgres',
-      password: 'postgres',
-      database: 'task-management',
-      autoLoadEntities: true,
-      synchronize: true,
+    TypeOrmModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: async (configService: ConfigService): Promise<any> => ({
+        type: 'postgres',
+        host: configService.get(ENV.DB_HOST),
+        port: configService.get(ENV.DB_PORT),
+        username: configService.get(ENV.DB_USERNAME),
+        password: configService.get(ENV.DB_PASSWORD),
+        database: configService.get(ENV.DB_DATABASE),
+        autoLoadEntities: true,
+        synchronize: true, // Set to false in production
+      }),
     }),
     AuthModule,
-    // KafkaModule - Removed since KafkaModule is not needed as an import
   ],
 })
 export class AppModule {}

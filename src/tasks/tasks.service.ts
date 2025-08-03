@@ -9,6 +9,8 @@ import { User } from '../auth/user.entity';
 import { ProducerService } from '../kafka/producer.service';
 import { ConsumerService } from '../kafka/consumer.service';
 import { EachMessagePayload } from 'kafkajs';
+import { ConfigService } from '@nestjs/config';
+import { ENV } from '../helpers/constants';
 
 @Injectable()
 export class TasksService implements OnModuleInit {
@@ -17,23 +19,27 @@ export class TasksService implements OnModuleInit {
     private tasksRepository: TasksRepository,
     private producerService: ProducerService,
     private consumerService: ConsumerService,
+    private configService: ConfigService,
   ) {}
 
   async onModuleInit(): Promise<void> {
-    await this.consumerService.consume(['tasks.json'], {
-      autoCommit: true,
-      eachMessage: async ({
-        message,
-        topic,
-        partition,
-      }: EachMessagePayload): Promise<void> => {
-        const task: Task = JSON.parse(message.value.toString());
+    await this.consumerService.consume(
+      [this.configService.get(ENV.KAFKA_TASKS_TOPIC)],
+      {
+        autoCommit: true,
+        eachMessage: async ({
+          message,
+          topic,
+          partition,
+        }: EachMessagePayload): Promise<void> => {
+          const task: Task = JSON.parse(message.value.toString());
 
-        console.log({
-          msg: `Received task from Kafka topic ${topic}, partition ${partition}: ${task.id} - ${task.title}`,
-        });
+          console.log({
+            msg: `Received task from Kafka topic ${topic}, partition ${partition}: ${task.id} - ${task.title}`,
+          });
+        },
       },
-    });
+    );
   }
 
   getTasks(filterDto: GetTasksFilterDto, user: User): Promise<Task[]> {
@@ -64,9 +70,12 @@ export class TasksService implements OnModuleInit {
     return task;
   }
 
-  async sendTaskToKafka(task: Task): Promise<void> {
+  async sendTaskToKafka(
+    task: Task,
+    topic: string = this.configService.get(ENV.KAFKA_TASKS_TOPIC),
+  ): Promise<void> {
     try {
-      await this.producerService.produceMessage('tasks.json', {
+      await this.producerService.produceMessage(topic, {
         key: task.id,
         value: JSON.stringify(task),
       });
