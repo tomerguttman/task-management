@@ -17,8 +17,8 @@ async function bootstrap(): Promise<void> {
   const logger: Logger = app.get(Logger);
 
   app.useGlobalPipes(new ValidationPipe());
-  app.useGlobalInterceptors(new TransformInterceptor());
   app.useLogger(logger);
+  app.useGlobalInterceptors(new TransformInterceptor());
   app.enableShutdownHooks(['SIGINT', 'SIGTERM']); // Enable graceful shutdown, will disconnect clients
 
   await app.listen(3000);

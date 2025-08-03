@@ -27,7 +27,7 @@ import { KafkaModule } from './kafka/kafka.module';
       synchronize: true,
     }),
     AuthModule,
-    KafkaModule,
+    // KafkaModule - Removed since KafkaModule is not needed as an import
   ],
 })
 export class AppModule {}

@@ -28,8 +28,8 @@ export class ProducerService implements OnModuleInit, OnApplicationShutdown {
     }
   }
 
-  async onApplicationShutdown(): Promise<void> {
-    this.logger.log(`Disconnecting producer...`);
+  async onApplicationShutdown(signal?:string): Promise<void> {
+    this.logger.log(`Disconnecting producer due to ${signal}`);
 
     await this.producer.disconnect();
   }
