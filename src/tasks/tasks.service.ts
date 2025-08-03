@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, OnModuleInit } from "@nestjs/common";
+import { Injectable, NotFoundException, OnModuleInit } from '@nestjs/common';
 import { TaskStatus } from './task-status.enum';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { GetTasksFilterDto } from './dto/get-tasks-filter.dto';
@@ -6,9 +6,9 @@ import { TasksRepository } from './tasks.repository';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Task } from './task.entity';
 import { User } from '../auth/user.entity';
-import { ProducerService } from "../kafka/producer.service";
-import { ConsumerService } from "../kafka/consumer.service";
-import { EachMessagePayload } from "kafkajs";
+import { ProducerService } from '../kafka/producer.service';
+import { ConsumerService } from '../kafka/consumer.service';
+import { EachMessagePayload } from 'kafkajs';
 
 @Injectable()
 export class TasksService implements OnModuleInit {
@@ -16,7 +16,7 @@ export class TasksService implements OnModuleInit {
     @InjectRepository(TasksRepository)
     private tasksRepository: TasksRepository,
     private producerService: ProducerService,
-    private consumerService: ConsumerService
+    private consumerService: ConsumerService,
   ) {}
 
   async onModuleInit(): Promise<void> {
@@ -27,7 +27,7 @@ export class TasksService implements OnModuleInit {
 
         console.log(`Received task from Kafka: ${task.id} - ${task.title}`);
       },
-    })
+    });
   }
 
   getTasks(filterDto: GetTasksFilterDto, user: User): Promise<Task[]> {
@@ -47,8 +47,10 @@ export class TasksService implements OnModuleInit {
   }
 
   async createTask(createTaskDto: CreateTaskDto, _user: User): Promise<Task> {
-    const task: Task = await this.tasksRepository.createTask(createTaskDto, _user);
-    // @ts-ignore
+    const task: Task = await this.tasksRepository.createTask(
+      createTaskDto,
+      _user,
+    );
     const { user, ..._task } = task;
 
     await this.sendTaskToKafka(_task as Task);
