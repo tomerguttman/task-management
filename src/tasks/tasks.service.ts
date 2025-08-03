@@ -20,12 +20,18 @@ export class TasksService implements OnModuleInit {
   ) {}
 
   async onModuleInit(): Promise<void> {
-    await this.consumerService.consume('tasks.json', {
+    await this.consumerService.consume(['tasks.json'], {
       autoCommit: true,
-      eachMessage: async ({ message }: EachMessagePayload): Promise<void> => {
+      eachMessage: async ({
+        message,
+        topic,
+        partition,
+      }: EachMessagePayload): Promise<void> => {
         const task: Task = JSON.parse(message.value.toString());
 
-        console.log(`Received task from Kafka: ${task.id} - ${task.title}`);
+        console.log({
+          msg: `Received task from Kafka topic ${topic}, partition ${partition}: ${task.id} - ${task.title}`,
+        });
       },
     });
   }

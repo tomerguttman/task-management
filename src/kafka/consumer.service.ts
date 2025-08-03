@@ -12,7 +12,7 @@ export class ConsumerService implements OnApplicationShutdown {
   private readonly consumers: Consumer[] = [];
 
   async consume(
-    topic: string,
+    topics: string[],
     configuration: ConsumerRunConfig,
   ): Promise<void> {
     const groupId = 'default-group';
@@ -21,12 +21,14 @@ export class ConsumerService implements OnApplicationShutdown {
     });
 
     await consumer.connect();
-    await consumer.subscribe({ topic, fromBeginning: true });
+    await consumer.subscribe({ topics, fromBeginning: true });
     await consumer.run(configuration);
 
     this.consumers.push(consumer);
     this.logger.log(
-      `Consumer for topic ${topic} started with group ID ${groupId}`,
+      `Consumer for topics ${topics.join(
+        ', ',
+      )} started with group ID ${groupId}`,
     );
   }
 
